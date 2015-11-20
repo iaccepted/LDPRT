@@ -15,7 +15,6 @@ bool Scene::addModelFromFile(const char* path)
 
 bool Scene::generateCoeffs(Sampler &sampler)
 {
-	if (!initCoeffs(sampler))return false;
 	this->generateDirectCoeffs(sampler);
 
 	//bounce
@@ -26,7 +25,7 @@ bool Scene::generateCoeffs(Sampler &sampler)
 	return true;
 }
 
-bool Scene::initCoeffs(Sampler &sampler)
+bool Scene::allocMemories(Sampler &sampler)
 {
 	int nFuncs = BAND_NUM * BAND_NUM;
 
@@ -49,10 +48,23 @@ bool Scene::initCoeffs(Sampler &sampler)
 				curVertex.shadowedCoeffs[i] = new LFLOAT[nFuncs];
 			}
 
-			if (NULL == curVertex.unshadowedCoeffs || NULL == curVertex.shadowedCoeffs[3])
+			for (unsigned lobeIdx = 0; lobeIdx < LOBE_NUM; ++lobeIdx)
+			{
+				curVertex.lobes[lobeIdx] = new LFLOAT[nFuncs + 3];
+			}
+
+			if (NULL == curVertex.unshadowedCoeffs || NULL == curVertex.shadowedCoeffs[3] || NULL == curVertex.lobes[LOBE_NUM-1])
 			{
 				cerr << "Failed to allocate memory for coefficients." << endl;
 				return false;
+			}
+
+			for (int i = 0; i < LOBE_NUM; ++i)
+			{
+				for (int j = 0; j < nFuncs + 3; ++j)
+				{
+					curVertex.lobes[i][j] = 0.0;
+				}
 			}
 
 			for (int i = 0; i < nFuncs; ++i)
@@ -92,6 +104,9 @@ void Scene::generateDirectCoeffs(Sampler &sampler)
 				interval += numAllVertices / 10;
 			}
 			Vertex &curVertex = objects[objIdx]->vertices[verIdx];
+
+			//alloc memory
+
 
 			std::vector<SAMPLE> &samples = sampler.samples;
 			for (unsigned sampleIdx = 0; sampleIdx < nSamples; ++sampleIdx)
@@ -253,7 +268,8 @@ bool Scene::generateLobes(Sampler &sampler, Directions &dirs)
 
 			for (int lobeIdx = 0; lobeIdx < LOBE_NUM; ++lobeIdx)
 			{
-				curVertex.lobes[lobeIdx] = new LFLOAT[nFuncs + 3];
+				//no need. the momory allocation has implemented in allocMemories
+				//curVertex.lobes[lobeIdx] = new LFLOAT[nFuncs + 3];
 
 				memcpy(BFGS::tlm, tCoeffs, nFuncs * sizeof(LFLOAT));
 
@@ -323,5 +339,137 @@ bool Scene::generateLobes(Sampler &sampler, Directions &dirs)
 
 	delete[] tCoeffs;
 	delete[] tApproximateCoeffs;
+	return true;
+}
+
+bool Scene::generateCoeffsAndLobes(Sampler &sampler, Directions &dirs)
+{
+	if (!allocMemories(sampler))return false;
+
+	//try to read from file
+	bool ret = readCoeffsAndLobesFromFile();
+
+	//ret is true --->read coeffs and lobes from file successfully --->no need to regenerate
+	if (ret)return true;
+
+	//regenerate coeffs and lobes data
+	generateCoeffs(sampler);
+	generateLobes(sampler, dirs);
+
+	//then write the new coeffs and lobes data to file
+	writeCoeffsAndLobesToFile();
+	return true;
+}
+
+bool Scene::writeCoeffsAndLobesToFile(const char *path)
+{
+	int nFuncs = BAND_NUM * BAND_NUM;	
+	int nFileBands = BAND_NUM, nFileSamples = SQRT_SAMPLES_NUM * SQRT_SAMPLES_NUM;
+		
+	std::ofstream writer(path, std::ios::out | std::ios::binary | std::ios::trunc);
+
+	writer.write((char *)&nFileBands, sizeof(int));
+	writer.write((char *)&nFileSamples, sizeof(int));
+
+	int nObjs = objects.size();
+	for (int objIdx = 0; objIdx < nObjs; ++objIdx)
+	{
+		Object *curObj = objects[objIdx];
+
+		const int nVertices = curObj->vertices.size();
+		for (int verIdx = 0; verIdx < nVertices; ++verIdx)
+		{
+			Vertex &curVertex = curObj->vertices[verIdx];
+
+			//write coeffs
+			writer.write((char *)curVertex.unshadowedCoeffs,
+				nFuncs*sizeof(LFLOAT));
+
+			for (int i = 0; i < 4; ++i)
+			{
+				writer.write((char *)curVertex.shadowedCoeffs[i],
+					nFuncs*sizeof(LFLOAT));
+			}
+
+			//write lobes
+			for (int lobeIdx = 0; lobeIdx < LOBE_NUM; ++lobeIdx)
+			{
+				writer.write((char *)curVertex.lobes[lobeIdx], (nFuncs + 3) * sizeof(LFLOAT));
+			}
+		}
+	}
+	writer.close();
+	return true;
+}
+
+bool Scene::readCoeffsAndLobesFromFile(const char *path)
+{
+	std::ifstream reader(path, std::ios::in | std::ios::binary);
+	if (!reader.is_open())
+	{
+		cout << endl;
+		cout << "--------------------------------------------------------------------------------------" << endl;
+		cout << "Unable to load the coeffs.dat, begin to regenerate the coeffs.." << endl;
+		cout << "--------------------------------------------------------------------------------------" << endl;
+		cout << endl;
+		return false;
+	}
+
+	int nFuncs = BAND_NUM * BAND_NUM;
+
+	//Are the number of bands and samples in the file correct?
+	
+	int nFileBands, nFileSamples;
+
+	reader.read((char *)&nFileBands, sizeof(int));
+	reader.read((char *)&nFileSamples, sizeof(int));
+
+	if (nFileBands != BAND_NUM || nFileSamples != SQRT_SAMPLES_NUM * SQRT_SAMPLES_NUM)
+	{
+		cout << endl;
+		cout << "--------------------------------------------------------------------------------------" << endl;
+		cout << "directcoeffs.dat has different number of bands/samples, regenerating coefficients.." << endl;
+		cout << "--------------------------------------------------------------------------------------" << endl;
+		cout << endl;
+		reader.close();
+		return false;
+	}
+
+	//If the file is good, read in the coefficients
+	
+	cout << endl;
+	cout << "--------------------------------------------------------------------------------------" << endl;
+	cout << "Coefficients file is right, start to read coeffs.." << endl;
+	cout << "--------------------------------------------------------------------------------------" << endl;
+	cout << endl;
+
+	int nObjs = objects.size();
+	for (int objIdx = 0; objIdx < nObjs; ++objIdx)
+	{
+		Object *curObj = objects[objIdx];
+
+		const int nVertices = curObj->vertices.size();
+		for (int verIdx = 0; verIdx < nVertices; ++verIdx)
+		{
+			Vertex &curVertex = curObj->vertices[verIdx];
+
+			//read coeffs
+			reader.read((char *)curVertex.unshadowedCoeffs,
+				nFuncs*sizeof(LFLOAT));
+
+			for (int i = 0; i < 4; ++i)
+			{
+				reader.read((char *)curVertex.shadowedCoeffs[i],
+					nFuncs*sizeof(LFLOAT));
+			}
+
+			//read lobes
+			for (int lobeIdx = 0; lobeIdx < LOBE_NUM; ++lobeIdx)
+			{
+				reader.read((char *)curVertex.lobes[lobeIdx], (nFuncs + 3) * sizeof(LFLOAT));
+			}
+		}
+	}
+	reader.close();
 	return true;
 }

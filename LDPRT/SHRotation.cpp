@@ -7,6 +7,7 @@ void rotateSHCoefficients(int numBands, double * unrotatedCoeffs, double * rotat
 	for (int i = 0; i<numFunctions; ++i)
 		rotatedCoeffs[i] = unrotatedCoeffs[i];
 
+
 	//Band 0 coefficient is unchanged
 	rotatedCoeffs[0] = unrotatedCoeffs[0];
 
@@ -138,7 +139,6 @@ void getX90DegreeRotationMatrix(int band, double * entries)
 	//Ensure that 0<=band<=3
 	if (band>3)
 	{
-
 		return;
 	}
 

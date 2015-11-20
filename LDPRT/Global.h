@@ -34,7 +34,7 @@ using glm::mat3;
 #endif
 
 #ifndef SQRT_DIR_NUM
-#define SQRT_DIR_NUM 10
+#define SQRT_DIR_NUM 20
 #endif
 
 

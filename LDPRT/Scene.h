@@ -6,28 +6,28 @@
 #include "Sampler.h"
 #include "BFGS.h"
 #include "Directions.h"
+#include <fstream>
 
 class Scene
 {
 public:
 	Scene() :numAllVertices(0), numAllIndices(0){}
 	bool addModelFromFile(const char* path);
-	bool generateCoeffs(Sampler &sampler);
-	bool generateLobes(Sampler &sampler, Directions &dirs);
-	//void bindBuffer();
-
+	bool generateCoeffsAndLobes(Sampler &sampler, Directions &dirs);
+	
 	bool isRayBlocked(Ray& ray, unsigned *objIdx, unsigned *vertexIdx);
 	std::vector<Object*> objects;
 
-	GLuint VB;
-	GLuint IB;
 	unsigned long numAllIndices;
-
 	unsigned long numAllVertices;
 
 private:
 
-	bool initCoeffs(Sampler &sampler);
+	bool allocMemories(Sampler &sampler);
+	bool readCoeffsAndLobesFromFile(const char *path = "./coeffs.dat");
+	bool writeCoeffsAndLobesToFile(const char *path = "./coeffs.dat");
+	bool generateCoeffs(Sampler &sampler);
+	bool generateLobes(Sampler &sampler, Directions &dirs);
 	void generateDirectCoeffs(Sampler &sampler);
 	void generateCoeffsDS(Sampler& sampler, int bounceTime);
 };

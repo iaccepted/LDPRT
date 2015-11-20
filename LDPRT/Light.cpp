@@ -54,10 +54,12 @@ void Light::directLight(const Sampler &sampler)
 			coeffs[2][i] += lightIntensity(samples[j].theta, samples[j].phi) * samples[j].shValues[i];
 		}
 
-		coeffs[0][i] *= 4 * M_PI / nSamples;
-		coeffs[1][i] *= 4 * M_PI / nSamples;
-		coeffs[2][i] *= 4 * M_PI / nSamples;
+		coeffs[0][i] *= (4 * M_PI / nSamples);
+		coeffs[1][i] *= (4 * M_PI / nSamples);
+		coeffs[2][i] *= (4 * M_PI / nSamples);
 	}
+
+	cout << (4 * M_PI / nSamples) << endl;
 }
 
 void LightProbeAccess(vec3* color, Image* image, vec3& direction)

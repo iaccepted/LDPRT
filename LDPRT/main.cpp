@@ -17,7 +17,6 @@ int main()
 	cout << "DIR_NUM: " << SQRT_DIR_NUM * SQRT_DIR_NUM  << endl;
 	cout << "SAMPLE_NUM: " << SQRT_SAMPLES_NUM * SQRT_SAMPLES_NUM << endl;
 
-
 	//sampling
 	Sampler sampler;
 	sampler.generateSamples();
@@ -26,24 +25,18 @@ int main()
 	Directions directions;
 	directions.generateDir(SQRT_DIR_NUM);
 
-
 	Light light;
-	//light.directLight(sampler);
-	light.lightFromImage("./Environments/galileo_probe.pfm", sampler);
+	light.directLight(sampler);
+	//light.lightFromImage("./Environments/galileo_probe.pfm", sampler);
 
 	Scene scene;
-	
 	scene.addModelFromFile("./models/cube.obj");
 	scene.addModelFromFile("./models/plain.obj");
 
-
-
-	scene.generateCoeffs(sampler);
-	scene.generateLobes(sampler, directions);
+	scene.generateCoeffsAndLobes(sampler, directions);
 
 	Renderer renderer(600, 600);
-	
-	renderer.compileShaderFromFile("./shaders/verShaderRGB.glsl", "./shaders/fragShaderRGB.glsl");
+	renderer.compileShaderFromFile("./shaders/verShader.glsl", "./shaders/fragShader.glsl");
 	renderer.setUniform();
 	renderer.renderSceneWithLight(scene, light);
 	
