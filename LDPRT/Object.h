@@ -20,7 +20,8 @@ class Object
 {
 public:
 	Object(){}
-	void load(const char *path);
+	void loadA(const char *path);
+	void loadB(const char *path);
 	bool doesRayHitObject(Ray& ray, unsigned *vertexIdx) const;
 
 	void bindBuffer();

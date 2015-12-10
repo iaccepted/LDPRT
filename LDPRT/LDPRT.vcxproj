@@ -79,6 +79,7 @@
     <ClCompile Include="ProgramManager.cpp" />
     <ClCompile Include="Ray.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="RotatedMatrix.cpp" />
     <ClCompile Include="Sampler.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SHEval.cpp" />
@@ -99,6 +100,7 @@
     <ClInclude Include="Object.h" />
     <ClInclude Include="ProgramManager.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="RotatedMatrix.h" />
     <ClInclude Include="Sampler.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SHEval.h" />

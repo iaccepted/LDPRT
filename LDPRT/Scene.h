@@ -7,6 +7,7 @@
 #include "BFGS.h"
 #include "Directions.h"
 #include <fstream>
+#include "RotatedMatrix.h"
 
 class Scene
 {
@@ -14,6 +15,7 @@ public:
 	Scene() :numAllVertices(0), numAllIndices(0){}
 	bool addModelFromFile(const char* path);
 	bool generateCoeffsAndLobes(Sampler &sampler, Directions &dirs);
+	bool generateDeformedLobes(const Scene *scene);
 	
 	bool isRayBlocked(Ray& ray, unsigned *objIdx, unsigned *vertexIdx);
 	std::vector<Object*> objects;
@@ -23,9 +25,9 @@ public:
 
 private:
 
-	bool allocMemories(Sampler &sampler);
-	bool readCoeffsAndLobesFromFile(const char *path = "./coeffs.dat");
-	bool writeCoeffsAndLobesToFile(const char *path = "./coeffs.dat");
+	bool allocMemories();
+	bool readCoeffsAndLobesFromFile(const char *path = "./models/coeffs.dat");
+	bool writeCoeffsAndLobesToFile(const char *path = "./models/coeffs.dat");
 	bool generateCoeffs(Sampler &sampler);
 	bool generateLobes(Sampler &sampler, Directions &dirs);
 	void generateDirectCoeffs(Sampler &sampler);

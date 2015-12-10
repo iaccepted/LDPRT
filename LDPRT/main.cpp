@@ -9,9 +9,9 @@
 
 using namespace std;
 
+
 int main()
 {
-
 	cout << "BAND_NUM: " << BAND_NUM << endl;
 	cout << "LOBE_NUM: " << LOBE_NUM << endl;
 	cout << "DIR_NUM: " << SQRT_DIR_NUM * SQRT_DIR_NUM  << endl;
@@ -30,15 +30,22 @@ int main()
 	//light.lightFromImage("./Environments/galileo_probe.pfm", sampler);
 
 	Scene scene;
-	scene.addModelFromFile("./models/cube.obj");
-	scene.addModelFromFile("./models/plain.obj");
+	//scene.addModelFromFile("./models/cube.obj");
+	scene.addModelFromFile("./models/001.obj");
+	
 
+	Scene deformedScene;
+	deformedScene.addModelFromFile("./models/002.obj");
+
+	//print_n(deformedScene);
 	scene.generateCoeffsAndLobes(sampler, directions);
+	deformedScene.generateDeformedLobes(&scene);
 
 	Renderer renderer(600, 600);
 	renderer.compileShaderFromFile("./shaders/verShader.glsl", "./shaders/fragShader.glsl");
 	renderer.setUniform();
-	renderer.renderSceneWithLight(scene, light);
-	
+	//renderer.renderSceneWithLight(scene, light);
+	renderer.renderSceneWithLight(deformedScene, light);
+
 	return 0;
 }

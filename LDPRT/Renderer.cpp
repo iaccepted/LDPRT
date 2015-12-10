@@ -3,8 +3,8 @@
 
 LIGHTING_TYPE Renderer::lightType = LIGHTING_TYPE_SH_UNSHADOWED;
 SHOW_TYPE Renderer::showType = SHOW_TYPE_ORIGINAL;
-double Renderer::theta = 0.f;
-double Renderer::phi = 0.f;
+double Renderer::theta = 101.7f;
+double Renderer::phi = 90.7f;
 //double PRTRenderer::theta = 0.0f;
 //double PRTRenderer::phi = 0.0f;
 double Renderer::preMouseX = 0.0f;
@@ -44,8 +44,17 @@ void Renderer::initGL()
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	modelMatrix = mat4(1.0f);
-	modelMatrix = glm::rotate(modelMatrix, glm::radians(45.0f), vec3(1.0, 0.0, 0.0));
-	modelMatrix = glm::rotate(modelMatrix, glm::radians(-50.0f), vec3(0.0, 1.0, 0.0));
+	//为渲染人脸新加的
+	modelMatrix = glm::scale(modelMatrix, vec3(0.2f, 0.2f, 0.2f));
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(180.0f), vec3(0.0, 1.0, 0.0));
+	modelMatrix = glm::rotate(modelMatrix, glm::radians(25.0f), vec3(1.0f, 0.0f, 0.0f));
+	modelMatrix = glm::translate(modelMatrix, vec3(0.0f, -360.0f, 0.0f));
+	//modelMatrix = glm::translate(modelMatrix, vec3(0.0f, 0.0f, -200.0f));
+	
+
+	//正常的
+	//modelMatrix = glm::rotate(modelMatrix, glm::radians(45.0f), vec3(1.0, 0.0, 0.0));
+	//modelMatrix = glm::rotate(modelMatrix, glm::radians(-50.0f), vec3(0.0, 1.0, 0.0));
 
 	//modelMatrix = glm::rotate(modelMatrix, glm::radians(45.0f), vec3(0.0, 1.0, 0.0));
 
@@ -72,14 +81,13 @@ void Renderer::initGLFW()
 void Renderer::renderSceneWithLight(Scene &scene, Light &light)
 {
 	light.rotateLightCoeffs(theta, phi);
-	//memcpy(light.rotatedCoeffs[0], light.coeffs, BAND_NUM * BAND_NUM * sizeof(LFLOAT));
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
 
 		if (isNeedRotate && isLeftButtonPress)
 		{
-			//cout << theta << "  " << phi << endl;
+			cout << theta << "  " << phi << endl;
 			light.rotateLightCoeffs(theta, phi);
 			isNeedRotate = false;
 		}
@@ -366,7 +374,7 @@ void Renderer::mouseButtonCallback(GLFWwindow* window, int button, int action, i
 
 void Renderer::cursorPositionCallback(GLFWwindow* window, double x, double y)
 {
-	theta += ((y - preMouseY) * 0.1f);
+	/*theta += ((y - preMouseY) * 0.1f);
 	if (theta < 0.0f)theta = 0.0f;
 	if (theta > 180.0f)theta = 180.0f;
 	phi += ((x - preMouseX) * 0.1);
@@ -374,7 +382,7 @@ void Renderer::cursorPositionCallback(GLFWwindow* window, double x, double y)
 	preMouseX = x;
 	preMouseY = y;
 
-	isNeedRotate = true;
+	isNeedRotate = true;*/
 }
 Renderer::~Renderer()
 {

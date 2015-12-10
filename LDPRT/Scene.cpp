@@ -3,7 +3,7 @@
 bool Scene::addModelFromFile(const char* path)
 {
 	Object* obj = new Object();
-	obj->load(path);
+	obj->loadA(path);
 	unsigned index = objects.size() + 1;
 
 	cout << "Model " << index << ": vertices = " << obj->vertices.size() << ", triangles = " << obj->indices.size() / 3 << endl;
@@ -25,9 +25,10 @@ bool Scene::generateCoeffs(Sampler &sampler)
 	return true;
 }
 
-bool Scene::allocMemories(Sampler &sampler)
+bool Scene::allocMemories()
 {
 	int nFuncs = BAND_NUM * BAND_NUM;
+	int nSamples = SQRT_SAMPLES_NUM * SQRT_SAMPLES_NUM;
 
 	unsigned nObjs = objects.size();
 	for (unsigned objIdx = 0; objIdx < nObjs; ++objIdx)
@@ -38,8 +39,8 @@ bool Scene::allocMemories(Sampler &sampler)
 		for (unsigned verIdx = 0; verIdx < nVertices; ++verIdx)
 		{
 			Vertex &curVertex = curObject->vertices[verIdx];
-			curVertex.blockIdx = new vec2[sampler.size()];
-			curVertex.isBlocked = new bool[sampler.size()];
+			curVertex.blockIdx = new vec2[nSamples];
+			curVertex.isBlocked = new bool[nSamples];
 
 			curVertex.unshadowedCoeffs = new LFLOAT[nFuncs];
 
@@ -344,7 +345,7 @@ bool Scene::generateLobes(Sampler &sampler, Directions &dirs)
 
 bool Scene::generateCoeffsAndLobes(Sampler &sampler, Directions &dirs)
 {
-	if (!allocMemories(sampler))return false;
+	if (!allocMemories())return false;
 
 	//try to read from file
 	bool ret = readCoeffsAndLobesFromFile();
@@ -471,5 +472,95 @@ bool Scene::readCoeffsAndLobesFromFile(const char *path)
 		}
 	}
 	reader.close();
+	return true;
+}
+
+/*
+
+test
+*/
+void print_n(const Scene &scene)
+{
+
+	unsigned nObjs = scene.objects.size();
+	for (unsigned objIdx = 0; objIdx < nObjs; ++objIdx)
+	{
+		Object *curObject = scene.objects[objIdx];
+		unsigned nVertices = curObject->vertices.size();
+
+		for (unsigned verIdx = 0; verIdx < nVertices; ++verIdx)
+		{
+			Vertex &curVertex = curObject->vertices[verIdx];
+
+			cout << curVertex.normal[0] << "\t\t" << curVertex.normal[1] << "\t\t" << curVertex.normal[2] << endl;
+		}
+	}
+}
+
+void print(glm::vec3 &v)
+{
+	cout << v[0] << "\t\t" << v[1] << "\t\t" << v[2] << endl;
+}
+
+bool Scene::generateDeformedLobes(const Scene *scene)
+{
+	if (!allocMemories())return false;
+	
+	int nObjs = objects.size();
+	int nFuncs = BAND_NUM * BAND_NUM;
+
+	for (int objIdx = 0; objIdx < nObjs; ++objIdx)
+	{
+		Object *curObj = this->objects[objIdx];
+		Object *oriObj = scene->objects[objIdx];
+
+		int nVertices = curObj->vertices.size();
+
+		for (int verIdx = 0; verIdx < nVertices; ++verIdx)
+		{
+			Vertex &curVertex = curObj->vertices[verIdx];
+			Vertex &oriVertex = oriObj->vertices[verIdx];
+			
+
+			glm::vec3 veca = glm::normalize(oriVertex.normal);
+			glm::vec3 vecb = glm::normalize(curVertex.normal);
+
+			memcpy(curVertex.unshadowedCoeffs, oriVertex.unshadowedCoeffs, nFuncs * sizeof(LFLOAT));
+
+			for (int i = 0; i < 4; ++i)
+			{
+				memcpy(curVertex.shadowedCoeffs[i], oriVertex.shadowedCoeffs[i], nFuncs * sizeof(LFLOAT));
+			}
+
+			for (int lobeIdx = 0; lobeIdx < LOBE_NUM; ++lobeIdx)
+			{
+				memcpy(curVertex.lobes[lobeIdx], oriVertex.lobes[lobeIdx], (nFuncs + 3) * sizeof(LFLOAT));
+			}
+				
+			//如果夹角为0及发现方向没变是不需要进行旋转的
+			LFLOAT dot = glm::dot(veca, vecb);
+			dot = dot>1.0 ? 1.0 : dot;
+			if (acos(dot) < 0.01)continue;
+
+			
+			glm::mat3 matrix = RotatedMatrix::getRotatedMatrix(veca, vecb);
+
+			for (int lobeIdx = 0; lobeIdx < LOBE_NUM; ++lobeIdx)
+			{
+				LFLOAT *lobe = oriVertex.lobes[lobeIdx];
+				glm::vec3 lobeAxis = glm::vec3(lobe[0], lobe[1], lobe[2]);
+
+				glm::vec3 deformedAxis = matrix * lobeAxis;
+
+				//print(deformedAxis);
+
+				lobe = curVertex.lobes[lobeIdx];
+				lobe[0] = deformedAxis[0];
+				lobe[1] = deformedAxis[1];
+				lobe[2] = deformedAxis[2];
+			}
+			
+		}
+	}
 	return true;
 }

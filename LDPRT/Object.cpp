@@ -1,10 +1,10 @@
 #include "Object.h"
 
-void Object::load(const char *path)
+void Object::loadA(const char *path)
 {
 	Assimp::Importer importer;
 
-	const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType);
+	const aiScene *scene = importer.ReadFile(path, aiProcess_JoinIdenticalVertices | aiProcess_SortByPType);
 
 	if (!scene)
 	{
@@ -37,6 +37,7 @@ void Object::load(const char *path)
 			aiVector3D n = mesh->mNormals[j];
 
 			vertices.push_back(Vertex(v.x, v.y, v.z, n.x, n.y, n.z));
+			//cout << n.x << "\t\t" << n.y << "\t\t" << n.z << endl;
 			aabb.expand(vec3(v.x, v.y, v.z));
 		}
 
@@ -51,6 +52,11 @@ void Object::load(const char *path)
 	}
 	//cout << nVertices << "--------" << nTriangles << endl;
 	//cout << vertices.size() << "--------" << indices.size() << endl;
+}
+
+void Object::loadB(const char *path)
+{
+
 }
 
 bool Object::doesRayHitObject(Ray &ray, unsigned *triangleIdx) const
